@@ -23,26 +23,46 @@ describe "User pages" do
 
 		before { visit signup_path }
 
+		let(:submit) { "Create my account" }
+
 		describe "with invalid information" do 
 			it "should not create a user" do
-				old_count = User.count
-				click_button "Create my account"
-				new_count = User.count
-				new_count.should == old_count
+				expect { click_button submit }.not_to change(User, :count)
+			end
+
+			describe "after submission" do
+				before { click_button submit }
+
+				it { should have_selector('title', text: "Sign up") }
+				it { should have_content('error') }
+				it { should_not have_content('Password digest') }
+				
 			end
 		end
 
 		describe "with valid information" do
-			it "should create a user" do
-				old_count = User.count
+
+			before do
 				fill_in "Name", 		with: "Example User"
 				fill_in "Email", 		with: "user@example.com"
 				fill_in "Password", 	with: "foobar"
 				fill_in "Confirmation", with: "foobar"
-				click_button "Create my account"
-				new_count = User.count
-				new_count.should == old_count + 1 
 			end
-		end 
+
+			it "should create a user" do
+				expect { click_button submit }.to change(User, :count).by(1)
+			end
+
+			describe "after saving a user" do
+				
+				before { click_button submit }
+
+				let(:user) {  User.find_by_email ("user@example.com") }
+				
+				it { should have_selector('title', text: user.name) }
+				it { should have_selector('div.alert.alert-success', text: 'Welcome') }
+				# it { should have_content('Welcome') }
+			end 
+		end
 	end
 end
