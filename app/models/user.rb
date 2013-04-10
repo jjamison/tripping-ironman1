@@ -3,6 +3,7 @@ class User < ActiveRecord::Base
   has_secure_password
   has_many :microposts, dependent: :destroy
   has_many :relationships, foreign_key: "follower_id", dependent: :destroy
+  has_many :followed_users, through: :relationships, source: :followed 
 
   before_save { |user| user.email = user.email.downcase }
   before_save :create_remember_token 
@@ -13,6 +14,19 @@ class User < ActiveRecord::Base
   					uniqueness: { case_sensitive: false }
   validates :password, length: { minimum: 6 }
   validates :password_confirmation, presence: true
+
+  def following?(other_user)
+    relationships.find_by_followed_id(other_user.id)
+
+  end
+
+  def follow!(other_user)
+    relationships.create!(followed_id: other_user.id)
+  end
+
+  def unfollow!(other_user)  
+    relationships.find_by_followed_id(other_user.id).destroy  
+  end
 
   def feed
     Micropost.where("user_id = ?", id)
